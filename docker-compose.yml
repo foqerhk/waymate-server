@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: waymate
+      POSTGRES_PASSWORD: waymate
+      POSTGRES_DB: waymate
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - waymate_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waymate -d waymate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  livekit:
+    image: livekit/livekit-server:v1.8.4
+    command: --config /etc/livekit.yaml
+    ports:
+      # Signaling via nginx on prod; RTC media must be public
+      - "127.0.0.1:17880:7880"
+      - "0.0.0.0:7881:7881"
+      - "50000-50100:50000-50100/udp"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    restart: unless-stopped
+
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:18080:8080"
+    env_file:
+      - .env
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://waymate:waymate@db:5432/waymate?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-replace-with-long-random-production-secret}
+      INVITE_HMAC_SECRET: ${INVITE_HMAC_SECRET:-replace-with-long-random-invite-secret}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:18080}
+      INVITE_TTL: ${INVITE_TTL:-24h}
+      APNS_ENABLED: ${APNS_ENABLED:-false}
+      APNS_KEY_PATH: ${APNS_KEY_PATH:-/app/secrets/AuthKey_XXXXXXXXXX.p8}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-com.example.waymate}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+      MIGRATION_DIR: /app/migrations
+      # Inside compose network; public URL is for iOS clients
+      LIVEKIT_URL: ${LIVEKIT_URL:-ws://livekit:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-replace-with-livekit-secret}
+      LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://127.0.0.1:17880}
+      AMAP_WEB_KEY: ${AMAP_WEB_KEY:-}
+    volumes:
+      - ./secrets:/app/secrets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      livekit:
+        condition: service_started
+
+volumes:
+  waymate_pg:

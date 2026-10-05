@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+waymate-api
+*.pem
+*.p8
+*.key
+secrets/*
+!secrets/.gitkeep
+livekit.yaml
+.DS_Store
+waymate_pg/
+bin/
+dist/
+*.log
