@@ -58,35 +58,40 @@ type APNsPusher struct {
 }
 
 func NewFromEnv(cfg config.Config) Pusher {
-	if !cfg.APNsEnabled {
-		log.Printf("apns: disabled (APNS_ENABLED=false) — VoIP wake uses stub")
-		return LogPusher{}
+	// 1) Local APNs — official cloud or a fully custom-signed iOS binary.
+	if cfg.APNsEnabled {
+		if cfg.APNsKeyPath == "" || cfg.APNsKeyID == "" || cfg.APNsTeamID == "" {
+			log.Printf("apns: enabled but missing KEY_PATH/KEY_ID/TEAM_ID — checking push relay")
+		} else if authKey, err := token.AuthKeyFromFile(cfg.APNsKeyPath); err != nil {
+			log.Printf("apns: cannot load key %s: %v — checking push relay", cfg.APNsKeyPath, err)
+		} else {
+			tok := &token.Token{
+				AuthKey: authKey,
+				KeyID:   cfg.APNsKeyID,
+				TeamID:  cfg.APNsTeamID,
+			}
+			p := &APNsPusher{
+				keyID:    cfg.APNsKeyID,
+				teamID:   cfg.APNsTeamID,
+				bundleID: cfg.APNsBundleID,
+				token:    tok,
+				dev:      apns2.NewTokenClient(tok).Development(),
+				prod:     apns2.NewTokenClient(tok).Production(),
+			}
+			log.Printf("apns: enabled key=%s team=%s bundle=%s production_default=%v",
+				cfg.APNsKeyID, cfg.APNsTeamID, cfg.APNsBundleID, cfg.APNsProduction)
+			return p
+		}
 	}
-	if cfg.APNsKeyPath == "" || cfg.APNsKeyID == "" || cfg.APNsTeamID == "" {
-		log.Printf("apns: enabled but missing KEY_PATH/KEY_ID/TEAM_ID — using stub")
-		return LogPusher{}
+
+	// 2) Official push relay — self-hosted data plane, App Store push credentials stay central.
+	if cfg.PushRelayURL != "" && cfg.PushRelayToken != "" {
+		log.Printf("apns: using official push relay at %s", cfg.PushRelayURL)
+		return NewRelayPusher(cfg.PushRelayURL, cfg.PushRelayToken)
 	}
-	authKey, err := token.AuthKeyFromFile(cfg.APNsKeyPath)
-	if err != nil {
-		log.Printf("apns: cannot load key %s: %v — using stub", cfg.APNsKeyPath, err)
-		return LogPusher{}
-	}
-	tok := &token.Token{
-		AuthKey: authKey,
-		KeyID:   cfg.APNsKeyID,
-		TeamID:  cfg.APNsTeamID,
-	}
-	p := &APNsPusher{
-		keyID:    cfg.APNsKeyID,
-		teamID:   cfg.APNsTeamID,
-		bundleID: cfg.APNsBundleID,
-		token:    tok,
-		dev:      apns2.NewTokenClient(tok).Development(),
-		prod:     apns2.NewTokenClient(tok).Production(),
-	}
-	log.Printf("apns: enabled key=%s team=%s bundle=%s production_default=%v",
-		cfg.APNsKeyID, cfg.APNsTeamID, cfg.APNsBundleID, cfg.APNsProduction)
-	return p
+
+	log.Printf("apns: disabled — VoIP/route wake uses stub (set APNS_* or PUSH_RELAY_*)")
+	return LogPusher{}
 }
 
 func (p *APNsPusher) client(sandbox bool) *apns2.Client {

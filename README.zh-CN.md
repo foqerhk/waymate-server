@@ -11,7 +11,7 @@ WayMate（带路）的开源服务端：无账号、扫码配对，同步位置 
 - REST + WebSocket 实时通道
 - 高德 Web 服务代理：地点搜索、步行 / 公交规划（Key 只放服务端）
 - 自建 LiveKit 音视频（老人后置摄像头）
-- 可选 APNs / VoIP 推送
+- **推送中继**：App Store 版带路的后台唤醒走官方 Push Relay（你无需持有苹果 `.p8`）
 
 ## 快速开始
 
@@ -29,6 +29,25 @@ curl -s http://127.0.0.1:18080/healthz
 
 在 iOS App **设置 → 服务器** 填入你的 API 地址。
 
+## 推送说明（重要）
+
+App Store 上的带路由官方签名，**只有官方 Apple 开发者账号**能向该 Bundle ID 发 APNs / VoIP。
+
+因此推荐 **混合部署**：
+
+- **数据面（你的服务器）**：配对、业务 API、WebSocket、路线、LiveKit 媒体
+- **推送面（官方）**：`https://waymate.intentcomputing.cn` 的 `/v1/push-relay/*`
+
+`.env` 中保持：
+
+```bash
+APNS_ENABLED=false
+PUSH_RELAY_URL=https://waymate.intentcomputing.cn
+PUSH_RELAY_TOKEN=<见 .env.example 中的社区令牌>
+```
+
+只有当你自己编译并签名 **另一套** iOS App 时，才需要自行配置 `APNS_*`。
+
 ## 需要自行准备的 Key / 证书
 
 | 项目 | 是否必须 | 申请位置 | 说明 |
@@ -36,21 +55,14 @@ curl -s http://127.0.0.1:18080/healthz
 | `JWT_SECRET` | 必须 | 自行生成 | 设备会话签名 |
 | `INVITE_HMAC_SECRET` | 必须 | 自行生成 | 邀请码 / 二维码签名 |
 | LiveKit Key/Secret | 通话需要 | 自行设定，与 `livekit.yaml` 一致 | 房间 JWT |
-| `AMAP_WEB_KEY` | 地图/路线需要 | [高德控制台](https://console.amap.com/) Web 服务 | **仅服务端**；开通搜索与路径规划；按控制台要求配置服务器出口 IP 白名单 |
+| `AMAP_WEB_KEY` | 地图/路线需要 | [高德控制台](https://console.amap.com/) Web 服务 | **仅服务端** |
 | `PUBLIC_BASE_URL` | 必须 | 你的 HTTPS 域名 | 写入邀请二维码 |
-| Apple Team ID + `.p8` Key | 推送/通话通知 | [Apple Developer](https://developer.apple.com/) | 开启 Push；Key 下载一次后放入 `secrets/` |
-| Bundle ID + Push / VoIP 能力 | 通话推送 | Xcode / Developer App ID | 与 App 一致 |
-| TLS 证书 | 生产环境 | Let's Encrypt 等 | API 与 LiveKit 信令走 HTTPS/WSS |
-| UDP 50000–50100 | 生产音视频 | 云厂商安全组 | LiveKit WebRTC 媒体面 |
+| `PUSH_RELAY_*` | App Store 版推荐 | 官方中继 | 无需苹果证书 |
+| Apple `.p8` / Team ID | 仅自定义签名 App | Apple Developer | 不能用于官方 App Store 包 |
+| TLS 证书 | 生产环境 | Let's Encrypt 等 | API 与 LiveKit 信令 |
+| UDP 50000–50100 | 生产音视频 | 云厂商安全组 | LiveKit WebRTC |
 
-完整变量见 [`.env.example`](.env.example)。本地联调可不启 APNs（`APNS_ENABLED=false`）。
-
-## 生产建议
-
-1. 用 Nginx/Caddy 终止 TLS（示例：[`deploy/nginx.example.conf`](deploy/nginx.example.conf)）
-2. `PUBLIC_BASE_URL` / `LIVEKIT_PUBLIC_URL` 指向公网域名
-3. 放开 LiveKit UDP 端口；必要时在 `livekit.yaml` 设置 `rtc.node_ip`
-4. 备份 Postgres 数据卷
+完整变量见 [`.env.example`](.env.example)。
 
 ## 许可证
 

@@ -8,25 +8,32 @@ import (
 )
 
 type Config struct {
-	HTTPAddr           string
-	DatabaseURL        string
-	JWTSecret          string
-	InviteHMACSecret   string
-	InviteTTL          time.Duration
-	PublicBaseURL      string
-	AllowedOrigins     []string
-	APNsEnabled        bool
-	APNsKeyPath        string
-	APNsKeyID          string
-	APNsTeamID         string
-	APNsBundleID       string
+	HTTPAddr            string
+	DatabaseURL         string
+	JWTSecret           string
+	InviteHMACSecret    string
+	InviteTTL           time.Duration
+	PublicBaseURL       string
+	AllowedOrigins      []string
+	APNsEnabled         bool
+	APNsKeyPath         string
+	APNsKeyID           string
+	APNsTeamID          string
+	APNsBundleID        string
 	APNsProduction      bool
 	LocationMinInterval time.Duration
-	LiveKitURL       string
-	LiveKitPublicURL string
-	LiveKitAPIKey    string
-	LiveKitAPISecret string
-	AmapWebKey       string
+	LiveKitURL          string
+	LiveKitPublicURL    string
+	LiveKitAPIKey       string
+	LiveKitAPISecret    string
+	AmapWebKey          string
+	// PushRelayURL is the official WayMate API origin used by self-hosted servers
+	// to deliver APNs/VoIP without holding the App Store team's .p8 key.
+	PushRelayURL string
+	// PushRelayToken is sent as Bearer auth when calling PushRelayURL (client side).
+	PushRelayToken string
+	// PushRelayAuthToken authenticates incoming /v1/push-relay/* calls (relay host side).
+	PushRelayAuthToken string
 }
 
 func Load() Config {
@@ -45,11 +52,14 @@ func Load() Config {
 		APNsBundleID:        getenv("APNS_BUNDLE_ID", "com.waymate.app"),
 		APNsProduction:      boolEnv("APNS_PRODUCTION", false),
 		LocationMinInterval: durationEnv("LOCATION_MIN_INTERVAL", 2*time.Second),
-		LiveKitURL:       getenv("LIVEKIT_URL", "ws://livekit:7880"),
-		LiveKitPublicURL: forceWSS(getenv("LIVEKIT_PUBLIC_URL", "ws://127.0.0.1:17880")),
-		LiveKitAPIKey:    getenv("LIVEKIT_API_KEY", "devkey"),
-		LiveKitAPISecret: getenv("LIVEKIT_API_SECRET", "replace-with-livekit-secret"),
-		AmapWebKey:       getenv("AMAP_WEB_KEY", ""),
+		LiveKitURL:          getenv("LIVEKIT_URL", "ws://livekit:7880"),
+		LiveKitPublicURL:    forceWSS(getenv("LIVEKIT_PUBLIC_URL", "ws://127.0.0.1:17880")),
+		LiveKitAPIKey:       getenv("LIVEKIT_API_KEY", "devkey"),
+		LiveKitAPISecret:    getenv("LIVEKIT_API_SECRET", "replace-with-livekit-secret"),
+		AmapWebKey:          getenv("AMAP_WEB_KEY", ""),
+		PushRelayURL:        strings.TrimRight(getenv("PUSH_RELAY_URL", ""), "/"),
+		PushRelayToken:      getenv("PUSH_RELAY_TOKEN", ""),
+		PushRelayAuthToken:  getenv("PUSH_RELAY_AUTH_TOKEN", ""),
 	}
 }
 

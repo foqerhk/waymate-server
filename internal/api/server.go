@@ -80,6 +80,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/calls/{callId}/answer", s.auth(s.handleAnswerCall))
 	mux.HandleFunc("POST /v1/calls/{callId}/end", s.auth(s.handleEndCall))
 	mux.HandleFunc("GET /v1/calls/{callId}", s.auth(s.handleGetCall))
+	mux.HandleFunc("POST /v1/push-relay/route", s.handlePushRelayRoute)
+	mux.HandleFunc("POST /v1/push-relay/voip", s.handlePushRelayVoIP)
 	mux.HandleFunc("GET /v1/ws", s.handleWS)
 	return s.cors(mux)
 }
