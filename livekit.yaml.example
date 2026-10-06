@@ -1,6 +1,4 @@
-# Example LiveKit config. Copy to livekit.yaml and edit before `docker compose up`.
-# livekit.yaml is gitignored so production keys stay private.
-
+# Copy to livekit.yaml (or livekit.yaml.intl) and fill in.
 port: 7880
 bind_addresses:
   - ""
@@ -9,12 +7,10 @@ rtc:
   port_range_start: 50000
   port_range_end: 50100
   use_external_ip: true
-  # Set to your public IPv4 when use_external_ip cannot detect it (common on cloud VMs).
-  # node_ip: 203.0.113.10
+  node_ip: YOUR_PUBLIC_IP
 redis: {}
 keys:
-  # Must match LIVEKIT_API_KEY / LIVEKIT_API_SECRET in .env
-  devkey: replace-with-livekit-secret
+  waymate_prod_key: REPLACE_WITH_LONG_RANDOM_SECRET
 logging:
   level: info
 room:

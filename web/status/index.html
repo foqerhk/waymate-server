@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>带路 · 运行状态</title>
+  <meta name="theme-color" content="#0b1c1f" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/assets/logo-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/assets/home.css?v=20261006d" />
+  <link rel="stylesheet" href="/assets/status.css?v=20261006d" />
+</head>
+<body class="status-page" data-title-key="status_title">
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" aria-label="带路 Way Mate">
+        <img src="/assets/logo-180.png" width="38" height="38" alt="" />
+        <span class="wordmark" role="img" aria-label="带路 Way Mate"></span>
+      </a>
+      <nav class="nav-links">
+        <a href="/" data-i18n="nav_home">首页</a>
+        <a href="#metrics" data-i18n="st_nav_metrics">核心指标</a>
+        <a href="#maps" data-i18n="st_nav_maps">地图额度</a>
+        <a href="#capacity" data-i18n="st_nav_cap">承载能力</a>
+        <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      </nav>
+      <div class="nav-actions">
+        <button type="button" class="lang" id="langBtn">EN</button>
+        <a class="pill-btn" href="/#download" data-i18n="nav_download">下载</a>
+        <button type="button" class="menu-btn" id="menuBtn" aria-controls="mMenu" aria-expanded="false" aria-label="menu"><i></i><i></i><i></i></button>
+      </div>
+    </div>
+    <div class="m-menu" id="mMenu">
+      <nav class="m-links">
+        <a href="/" data-i18n="nav_home">首页</a>
+        <a href="#metrics" data-i18n="st_nav_metrics">核心指标</a>
+        <a href="#maps" data-i18n="st_nav_maps">地图额度</a>
+        <a href="#capacity" data-i18n="st_nav_cap">承载能力</a>
+        <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      </nav>
+      <div class="store-grid" data-stores></div>
+    </div>
+  </header>
+
+  <section class="st-hero">
+    <div class="st-hero-bg" aria-hidden="true"></div>
+    <div class="wrap st-hero-inner">
+      <div class="st-head">
+        <p class="kicker"><span class="dot"></span><span data-i18n="st_kicker">公开运行面板 · 不含个人数据</span></p>
+        <h1 data-i18n="status_title">运行状态</h1>
+        <p class="st-sub" data-i18n="status_sub">公开汇总，不含个人明细与 API Key。</p>
+      </div>
+
+      <div class="health-card" id="healthCard" data-state="loading">
+        <div class="health-main">
+          <span class="health-orb"><i></i></span>
+          <div>
+            <b id="healthTitle" data-i18n="st_loading">正在获取状态…</b>
+            <span id="healthMeta"></span>
+          </div>
+        </div>
+        <div class="range" role="tablist">
+          <button type="button" data-range="7" class="active" data-i18n="st_7d">近 7 天</button>
+          <button type="button" data-range="30" data-i18n="st_30d">近 30 天</button>
+        </div>
+      </div>
+
+      <ul class="components" id="components">
+        <li data-k="api"><i></i><span data-i18n="st_c_api">API 服务</span><em></em></li>
+        <li data-k="db"><i></i><span data-i18n="st_c_db">数据库</span><em></em></li>
+        <li data-k="ws"><i></i><span data-i18n="st_c_ws">实时通道</span><em></em></li>
+        <li data-k="livekit"><i></i><span data-i18n="st_c_lk">音视频通话</span><em></em></li>
+        <li data-k="maps"><i></i><span data-i18n="st_c_maps">地图服务</span><em></em></li>
+      </ul>
+    </div>
+  </section>
+
+  <main class="wrap st-main">
+    <div class="st-error" id="error" hidden></div>
+
+    <section id="metrics">
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section class="charts">
+      <article class="panel">
+        <header><div><h3 data-i18n="chart_active">活跃设备（按日）</h3><p id="activeSum"></p></div><span class="legend"><i style="--c:#0F7366"></i><span data-i18n="st_lg_devices">活跃设备</span></span></header>
+        <div class="chart" id="chartActive"></div>
+      </article>
+      <article class="panel">
+        <header><div><h3 data-i18n="chart_calls">通话次数 / 峰值并发</h3><p id="callSum"></p></div><span class="legend"><i style="--c:#0F7366"></i><span data-i18n="st_lg_calls">通话次数</span><i style="--c:#d08317" class="ln"></i><span data-i18n="st_lg_peak">峰值并发</span></span></header>
+        <div class="chart" id="chartCalls"></div>
+      </article>
+    </section>
+
+    <section class="maps" id="maps">
+      <div class="section-title">
+        <h2 data-i18n="st_maps_h">地图额度</h2>
+        <span class="chip" id="providerChip"></span>
+      </div>
+      <div class="maps-grid">
+        <article class="panel gauge-panel">
+          <div class="gauge" id="gaugeSearch"></div>
+          <div class="gauge-copy">
+            <h3 data-i18n="st_search">关键字搜索</h3>
+            <p id="searchMeta"></p>
+            <div class="runway" id="searchRunway"></div>
+          </div>
+        </article>
+        <article class="panel gauge-panel">
+          <div class="gauge" id="gaugeLbs"></div>
+          <div class="gauge-copy">
+            <h3 data-i18n="st_lbs">路径规划（步行 + 公交）</h3>
+            <p id="lbsMeta"></p>
+            <div class="runway" id="lbsRunway"></div>
+          </div>
+        </article>
+      </div>
+      <div class="mini-grid" id="miniGrid"></div>
+    </section>
+
+    <section class="capacity" id="capacity">
+      <div class="cap-card">
+        <div class="cap-left">
+          <p class="eyebrow" data-i18n="cap_h">承载与扩展</p>
+          <div class="cap-big"><b id="capFamilies">-</b><span data-i18n="st_families_unit">个家庭</span></div>
+          <p class="cap-desc" id="capText"></p>
+          <a class="btn btn-primary" href="https://github.com/foqerhk/waymate-server/blob/main/docs/CAPACITY.md" data-i18n="cap_doc">服务器规格与推荐用户数</a>
+        </div>
+        <div class="cap-right">
+          <div class="bars" id="capBars"></div>
+          <div class="load" id="capLoad"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot wrap">
+    <div class="foot-brand">
+      <img src="/assets/logo-64.png" width="32" height="32" alt="" />
+      <span class="wordmark" role="img" aria-label="带路 Way Mate"></span>
+      <span class="foot-org">Intent Computing</span>
+    </div>
+    <div class="foot-links">
+      <a href="/" data-i18n="nav_home">首页</a>
+      <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      <a href="https://github.com/foqerhk/waymate-server/blob/main/docs/CAPACITY.md">CAPACITY</a>
+    </div>
+  </footer>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <script src="/assets/i18n.js?v=20261006d"></script>
+  <script src="/assets/nav.js?v=20261006d"></script>
+  <script src="/assets/status.js?v=20261006d"></script>
+</body>
+</html>

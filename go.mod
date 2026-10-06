@@ -1,4 +1,4 @@
-module github.com/foqerhk/waymate-server
+module github.com/waymate/backend
 
 go 1.22
 

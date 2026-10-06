@@ -31,10 +31,11 @@ func NewRelayPusher(baseURL, authToken string) *RelayPusher {
 }
 
 type relayRouteBody struct {
-	DeviceToken string `json:"deviceToken"`
-	Sandbox     bool   `json:"sandbox"`
-	Title       string `json:"title"`
-	Body        string `json:"body"`
+	DeviceToken string         `json:"deviceToken"`
+	Sandbox     bool           `json:"sandbox"`
+	Title       string         `json:"title"`
+	Body        string         `json:"body"`
+	Custom      map[string]any `json:"custom,omitempty"`
 }
 
 type relayVoIPBody struct {
@@ -43,7 +44,7 @@ type relayVoIPBody struct {
 	Data      map[string]any `json:"data"`
 }
 
-func (p *RelayPusher) NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string) error {
+func (p *RelayPusher) NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string, custom map[string]any) error {
 	if strings.TrimSpace(deviceToken) == "" {
 		return nil
 	}
@@ -52,6 +53,7 @@ func (p *RelayPusher) NotifyRoute(ctx context.Context, deviceToken string, sandb
 		Sandbox:     sandbox,
 		Title:       title,
 		Body:        body,
+		Custom:      custom,
 	})
 }
 

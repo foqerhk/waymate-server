@@ -9,7 +9,7 @@ WayMate（带路）的开源服务端：无账号、扫码配对，同步位置 
 - 设备注册 + JWT（无用户名密码）
 - 家庭邀请二维码与加入流程
 - REST + WebSocket 实时通道
-- 高德 Web 服务代理：地点搜索、步行 / 公交规划（Key 只放服务端）
+- 地图：`MAPS_PROVIDER=amap`（高德）或 `google`（谷歌）；地点搜索 / 步行 / 公交，Key 只放服务端
 - 自建 LiveKit 音视频（老人后置摄像头）
 - **推送中继**：App Store 版带路的后台唤醒走官方 Push Relay（你无需持有苹果 `.p8`）
 
@@ -55,7 +55,9 @@ PUSH_RELAY_TOKEN=<见 .env.example 中的社区令牌>
 | `JWT_SECRET` | 必须 | 自行生成 | 设备会话签名 |
 | `INVITE_HMAC_SECRET` | 必须 | 自行生成 | 邀请码 / 二维码签名 |
 | LiveKit Key/Secret | 通话需要 | 自行设定，与 `livekit.yaml` 一致 | 房间 JWT |
-| `AMAP_WEB_KEY` | 地图/路线需要 | [高德控制台](https://console.amap.com/) Web 服务 | **仅服务端** |
+| `MAPS_PROVIDER` | 地图需要 | `amap`（国区）或 `google`（外区） | 部署时切换，同一套代码 |
+| `AMAP_WEB_KEY` | `amap` 时 | [高德控制台](https://console.amap.com/) Web 服务 | **仅服务端** |
+| `GOOGLE_MAPS_API_KEY` | `google` 时 | [Google Cloud](https://console.cloud.google.com/) Places + Directions | **仅服务端** |
 | `PUBLIC_BASE_URL` | 必须 | 你的 HTTPS 域名 | 写入邀请二维码 |
 | `PUSH_RELAY_*` | App Store 版推荐 | 官方中继 | 无需苹果证书 |
 | Apple `.p8` / Team ID | 仅自定义签名 App | Apple Developer | 不能用于官方 App Store 包 |

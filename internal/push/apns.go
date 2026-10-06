@@ -12,23 +12,23 @@ import (
 	"github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/payload"
 	"github.com/sideshow/apns2/token"
-	"github.com/foqerhk/waymate-server/internal/config"
+	"github.com/waymate/backend/internal/config"
 )
 
 // Pusher sends wake-up notifications when a route is pushed to an elder,
 // and VoIP pushes so CallKit can ring when the elder app is not running.
 type Pusher interface {
-	NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string) error
+	NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string, custom map[string]any) error
 	NotifyVoIP(ctx context.Context, voipToken string, sandbox bool, data map[string]any) error
 }
 
 type LogPusher struct{}
 
-func (LogPusher) NotifyRoute(_ context.Context, deviceToken string, sandbox bool, title, body string) error {
+func (LogPusher) NotifyRoute(_ context.Context, deviceToken string, sandbox bool, title, body string, custom map[string]any) error {
 	if deviceToken == "" {
 		return nil
 	}
-	log.Printf("apns stub sandbox=%v token=%s… title=%q body=%q", sandbox, trim(deviceToken, 8), title, body)
+	log.Printf("apns stub sandbox=%v token=%s… title=%q body=%q custom=%v", sandbox, trim(deviceToken, 8), title, body, custom)
 	return nil
 }
 
@@ -101,16 +101,23 @@ func (p *APNsPusher) client(sandbox bool) *apns2.Client {
 	return p.prod
 }
 
-func (p *APNsPusher) NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string) error {
+func (p *APNsPusher) NotifyRoute(ctx context.Context, deviceToken string, sandbox bool, title, body string, custom map[string]any) error {
 	if strings.TrimSpace(deviceToken) == "" {
 		return nil
 	}
+	// Prefer body-only alert so iOS shows the localized CFBundleDisplayName (带路)
+	// instead of a hardcoded English title like "WayMate".
 	pl := payload.NewPayload().
-		AlertTitle(title).
 		AlertBody(body).
 		Sound("default").
 		ContentAvailable().
 		Custom("waymate", "route")
+	if strings.TrimSpace(title) != "" {
+		pl = pl.AlertTitle(title)
+	}
+	for k, v := range custom {
+		pl.Custom(k, v)
+	}
 	n := &apns2.Notification{
 		DeviceToken: deviceToken,
 		Topic:       p.bundleID,

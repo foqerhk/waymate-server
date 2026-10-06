@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>带路 Way Mate</title>
+  <meta name="description" content="家人帮你规划路，你只管跟着走。" />
+  <meta name="theme-color" content="#0b1c1f" />
+  <meta property="og:title" content="带路 Way Mate" />
+  <meta property="og:description" content="家人帮你规划路，你只管跟着走。" />
+  <meta property="og:image" content="/assets/video/hero.jpg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/assets/logo-180.png" />
+  <link rel="preload" as="image" href="/assets/video/hero.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/assets/home.css?v=20261006d" />
+  <script>document.documentElement.classList.add("js");</script>
+</head>
+<body>
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" aria-label="带路 Way Mate">
+        <img src="/assets/logo-180.png" width="38" height="38" alt="" />
+        <span class="wordmark" role="img" aria-label="带路 Way Mate"></span>
+      </a>
+      <nav class="nav-links">
+        <a href="#how" data-i18n="nav_how">如何运作</a>
+        <a href="#features" data-i18n="nav_features">功能</a>
+        <a href="#modes" data-i18n="nav_modes">出行方式</a>
+        <a href="/status" data-i18n="nav_status">运行状态</a>
+        <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      </nav>
+      <div class="nav-actions">
+        <button type="button" class="lang" id="langBtn">EN</button>
+        <a class="pill-btn" href="#download" data-i18n="nav_download">下载</a>
+        <button type="button" class="menu-btn" id="menuBtn" aria-controls="mMenu" aria-expanded="false" aria-label="menu"><i></i><i></i><i></i></button>
+      </div>
+    </div>
+    <div class="m-menu" id="mMenu">
+      <nav class="m-links">
+        <a href="#how" data-i18n="nav_how">如何运作</a>
+        <a href="#features" data-i18n="nav_features">功能</a>
+        <a href="#modes" data-i18n="nav_modes">出行方式</a>
+        <a href="#download" data-i18n="nav_download">下载</a>
+        <a href="/status" data-i18n="nav_status">运行状态</a>
+        <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      </nav>
+      <div class="store-grid" data-stores></div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="/assets/video/hero.jpg" data-autoplay>
+      <source src="/assets/video/hero.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-shade"></div>
+
+    <div class="hero-inner wrap">
+      <div class="hero-copy">
+        <p class="kicker reveal"><span class="dot"></span><span data-i18n="hero_kicker">家庭出行陪伴 · 无账号扫码</span></p>
+        <h1 class="reveal">
+          <span data-i18n="hero_title_1">家人帮你规划路，</span>
+          <span class="grad" data-i18n="hero_title_2">你只管跟着走。</span>
+        </h1>
+        <p class="lede reveal" data-i18n="hero_lede">从爸妈说不清位置出发——老人少操作，子女看得懂、带得动，必要时听得见、看得见。</p>
+        <div class="cta-row reveal">
+          <button type="button" class="btn btn-primary" data-film>
+            <span class="play-ico" aria-hidden="true"></span>
+            <span data-i18n="cta_film">观看品牌影片</span>
+          </button>
+          <a class="btn btn-ghost" href="#download" data-i18n="cta_download">下载 App</a>
+        </div>
+      </div>
+
+      <div class="hero-device reveal" aria-hidden="true">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen nav-screen">
+            <div class="ns-top">
+              <span class="ns-live"><i></i><span data-i18n="ui_live">家人正在带路</span></span>
+              <span class="ns-eta">8 min</span>
+            </div>
+            <div class="ns-arrow">
+              <svg viewBox="0 0 120 120"><path d="M70 104V54c0-8-6-14-14-14H34" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><path d="M46 20 22 40l24 20" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="ns-dist">50<small data-i18n="ui_m">米</small></div>
+            <div class="ns-instr" data-i18n="ui_turn_left">前方路口左转</div>
+            <div class="ns-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="ns-spk">
+              <svg viewBox="0 0 24 24"><path d="M3 10v4h3l5 4V6L6 10H3zm13.5 2a3.5 3.5 0 0 0-1.8-3.1v6.1A3.5 3.5 0 0 0 16.5 12zM14.7 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="float-card fc-1">
+          <img src="/assets/logo-64.png" alt="" width="30" height="30" />
+          <div><b data-i18n="fc1_t">儿子为您规划好路线</b><span data-i18n="fc1_d">去医院 · 1.2 公里 · 步行</span></div>
+        </div>
+        <div class="float-card fc-2">
+          <span class="rec"></span>
+          <div><b data-i18n="fc2_t">实时视频中</b><span data-i18n="fc2_d">后置镜头 · 00:28</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-stats wrap reveal">
+      <div><b>0</b><span data-i18n="stat_1">账号与密码</span></div>
+      <div><b>1</b><span data-i18n="stat_2">次扫码即配对</span></div>
+      <div><b>3</b><span data-i18n="stat_3">种出行方式</span></div>
+      <div><b>2</b><span data-i18n="stat_4">种身份，一个 App</span></div>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span data-i18n="i1_t">实时定位</span><i>✦</i><span data-i18n="i2_t">规划路线</span><i>✦</i><span data-i18n="i3_t">语音导航</span><i>✦</i><span data-i18n="i4_t">视频指路</span><i>✦</i><span data-i18n="mq_5">自动接通</span><i>✦</i><span data-i18n="mq_6">无账号扫码</span><i>✦</i><span data-i18n="mq_7">开源自建</span><i>✦</i>
+      <span data-i18n="i1_t">实时定位</span><i>✦</i><span data-i18n="i2_t">规划路线</span><i>✦</i><span data-i18n="i3_t">语音导航</span><i>✦</i><span data-i18n="i4_t">视频指路</span><i>✦</i><span data-i18n="mq_5">自动接通</span><i>✦</i><span data-i18n="mq_6">无账号扫码</span><i>✦</i><span data-i18n="mq_7">开源自建</span><i>✦</i>
+    </div>
+  </div>
+
+  <!-- Story -->
+  <section class="story wrap" id="story">
+    <div class="story-media reveal">
+      <video muted loop playsinline preload="none" poster="/assets/video/walk.jpg" data-lazy>
+        <source data-src="/assets/video/walk.mp4" type="video/mp4" />
+      </video>
+      <div class="bubble b-left"><span data-i18n="bubble_1">妈妈，前面路口左转，我看着呢～</span></div>
+      <div class="bubble b-right"><span data-i18n="bubble_2">好的，我现在左转。</span></div>
+    </div>
+    <div class="story-copy">
+      <p class="eyebrow reveal" data-i18n="story_eyebrow">为什么做带路</p>
+      <h2 class="reveal" data-i18n="story_h">城市越来越大，爸妈的路却越来越难认。</h2>
+      <ol class="beats">
+        <li class="reveal"><span>01</span><p data-i18n="story_1">爸妈出门总说「我在那个路口」——你想去接，却对不上点。</p></li>
+        <li class="reveal"><span>02</span><p data-i18n="story_2">地图 App 字小、步骤多；越教越烦，老人不愿「麻烦人」。</p></li>
+        <li class="reveal"><span>03</span><p data-i18n="story_3">无账号扫码成家，子女推路线，老人跟着大字与语音走；走不明白就视频帮看一眼。</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- How: two sides -->
+  <section class="how" id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow" data-i18n="how_eyebrow">一个 App · 两种身份</p>
+        <h2 data-i18n="how_h">你在远方规划，TA 在路上跟着走。</h2>
+      </div>
+      <div class="sides">
+        <article class="side reveal">
+          <video muted loop playsinline preload="none" poster="/assets/video/plan.jpg" data-lazy>
+            <source data-src="/assets/video/plan.mp4" type="video/mp4" />
+          </video>
+          <div class="side-body">
+            <span class="tag" data-i18n="role_family">家人端</span>
+            <h3 data-i18n="fam_h">搜个地点，一键发送</h3>
+            <ul>
+              <li data-i18n="fam_1">搜索目的地，或从收藏里选常用地址</li>
+              <li data-i18n="fam_2">步行 / 公交 / 代叫车，规划好再推送</li>
+              <li data-i18n="fam_3">实时看到老人走到哪，随时语音、视频</li>
+            </ul>
+          </div>
+        </article>
+        <div class="sync" aria-hidden="true">
+          <span class="sync-ring"></span>
+          <span class="sync-core" data-i18n="sync">实时同步</span>
+        </div>
+        <article class="side reveal">
+          <video muted loop playsinline preload="none" poster="/assets/video/smile.jpg" data-lazy>
+            <source data-src="/assets/video/smile.mp4" type="video/mp4" />
+          </video>
+          <div class="side-body">
+            <span class="tag tag-warm" data-i18n="role_elder">老人端</span>
+            <h3 data-i18n="eld_h">打开就能用，跟着走就行</h3>
+            <ul>
+              <li data-i18n="eld_1">不用登录，家人发来路线自动进入导航</li>
+              <li data-i18n="eld_2">大箭头、大字体，语音一步一步说清楚</li>
+              <li data-i18n="eld_3">家人来电自动接通，免去找按钮</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features bento -->
+  <section class="features wrap" id="features">
+    <div class="section-head reveal">
+      <p class="eyebrow" data-i18n="feat_eyebrow">核心能力</p>
+      <h2 data-i18n="feat_h">像家人在身边一样，牵着走。</h2>
+    </div>
+    <div class="bento">
+      <article class="tile tile-video reveal">
+        <video muted loop playsinline preload="none" poster="/assets/video/call.jpg" data-lazy>
+          <source data-src="/assets/video/call.mp4" type="video/mp4" />
+        </video>
+        <div class="tile-body">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M17 10.5V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5l4 3v-9l-4 3z"/></svg></div>
+          <h3 data-i18n="i4_t">视频指路</h3>
+          <p data-i18n="f4_d">老人后置镜头自动传回前方路况，家人远程帮看一眼、说一句。</p>
+        </div>
+      </article>
+      <article class="tile reveal">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg></div>
+        <h3 data-i18n="i1_t">实时定位</h3>
+        <p data-i18n="f1_d">后台持续共享位置，与是否在导航无关，随时知道家人在哪。</p>
+        <div class="radar" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+      </article>
+      <article class="tile reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="6" r="2.4"/><path d="M8.4 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.6"/></svg></div>
+        <h3 data-i18n="i2_t">规划路线</h3>
+        <p data-i18n="f2_d">子女规划步行、公交或代叫车，一键推到老人手机。</p>
+        <svg class="route-art" viewBox="0 0 300 90" aria-hidden="true"><path d="M10 70 C 70 70, 70 20, 140 20 S 220 70, 290 30" /><circle cx="10" cy="70" r="6"/><circle cx="290" cy="30" r="6"/></svg>
+      </article>
+      <article class="tile reveal">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 10v4h3l5 4V6L6 10H3zm13.5 2a3.5 3.5 0 0 0-1.8-3.1v6.1A3.5 3.5 0 0 0 16.5 12z"/></svg></div>
+        <h3 data-i18n="i3_t">语音导航</h3>
+        <p data-i18n="f3_d">大字大声，每一步都念出来，不必盯着屏幕。</p>
+        <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </article>
+      <article class="tile reveal">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></div>
+        <h3 data-i18n="mq_5">自动接通</h3>
+        <p data-i18n="f5_d">系统级来电，老人端自动接听；仅家人可发起，安心不打扰。</p>
+      </article>
+      <article class="tile tile-wide reveal">
+        <div>
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm10-2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h4v2h-4v-2zm-4 4h2v2h-2v-2zm4-2h2v4h-2v-4zm2 2h2v2h-2v-2z"/></svg></div>
+          <h3 data-i18n="mq_6">无账号扫码</h3>
+          <p data-i18n="f6_d">不注册、不记密码，扫一下二维码就成了一家人。</p>
+        </div>
+        <div class="pair-art" aria-hidden="true">
+          <div class="pa-qr"><i></i><i></i><i></i><span></span></div>
+          <div class="pa-line"></div>
+          <div class="pa-code"><b>4</b><b>8</b><b>2</b><b>1</b><b>9</b><b>6</b></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Modes -->
+  <section class="modes" id="modes">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow" data-i18n="modes_eyebrow">三种出行方式</p>
+        <h2 data-i18n="modes_sub">大箭头、大字体、清楚语音——跟着走就行</h2>
+      </div>
+      <div class="modes-grid">
+        <article class="mode m-walk reveal">
+          <header><span>01</span><h3 data-i18n="m1_t">步行导航</h3></header>
+          <div class="mini-phone">
+            <div class="mp-arrow"><svg viewBox="0 0 60 60"><path d="M30 52V12M14 28 30 12l16 16" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="mp-txt" data-i18n="m1_ui">继续直行 300 米</div>
+          </div>
+          <p data-i18n="m1_d">请直行三百米——语音也会说一遍</p>
+        </article>
+        <article class="mode m-transit reveal">
+          <header><span>02</span><h3 data-i18n="m2_t">公共交通</h3></header>
+          <div class="mini-phone">
+            <div class="mp-arrow"><svg viewBox="0 0 60 60"><rect x="14" y="8" width="32" height="38" rx="8" fill="none" stroke="currentColor" stroke-width="5"/><path d="M14 30h32M22 46l-6 8M38 46l6 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="22" cy="38" r="2.6" fill="currentColor"/><circle cx="38" cy="38" r="2.6" fill="currentColor"/></svg></div>
+            <div class="mp-txt" data-i18n="m2_ui">下一程：乘坐 1 号线</div>
+          </div>
+          <p data-i18n="m2_d">还有 2 站下车——大字提醒</p>
+        </article>
+        <article class="mode m-ride reveal">
+          <header><span>03</span><h3 data-i18n="m3_t">代叫车</h3></header>
+          <div class="mini-phone">
+            <div class="mp-arrow"><svg viewBox="0 0 60 60"><path d="M10 38v-8l6-12h28l6 12v8a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M10 30h40" stroke="currentColor" stroke-width="5"/><circle cx="19" cy="36" r="3" fill="currentColor"/><circle cx="41" cy="36" r="3" fill="currentColor"/></svg></div>
+            <div class="mp-txt" data-i18n="m3_ui">司机已到达</div>
+          </div>
+          <p data-i18n="m3_d">车到了，请上车——车牌看得清</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cinematic band -->
+  <section class="cinema">
+    <video muted loop playsinline preload="none" poster="/assets/video/city.jpg" data-lazy>
+      <source data-src="/assets/video/city.mp4" type="video/mp4" />
+    </video>
+    <div class="cinema-shade"></div>
+    <div class="cinema-copy wrap">
+      <h2 class="reveal" data-i18n="cinema_h">城市再大，也有家人陪你走。</h2>
+      <p class="reveal" data-i18n="cinema_d">家人虽然不在身边，也能一路陪着你。</p>
+      <button type="button" class="btn btn-primary reveal" data-film>
+        <span class="play-ico" aria-hidden="true"></span>
+        <span data-i18n="cta_film">观看品牌影片</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="steps wrap">
+    <div class="step-col reveal">
+      <h2><span data-i18n="elder_simple_pre">老人用起来</span> <em data-i18n="elder_simple_em">真简单</em></h2>
+      <ol>
+        <li><b>1</b><div><h3 data-i18n="e1_t">打开 App</h3><p data-i18n="e1_d">不用登录，不用操作</p></div></li>
+        <li><b>2</b><div><h3 data-i18n="e2_t">自动开导航</h3><p data-i18n="e2_d">家人发来，自动进入</p></div></li>
+        <li><b>3</b><div><h3 data-i18n="e3_t">跟着语音走</h3><p data-i18n="e3_d">大箭头大字体，清楚明白</p></div></li>
+      </ol>
+    </div>
+    <div class="step-col dark reveal">
+      <h2 data-i18n="steps_h">家人端 · 简单三步</h2>
+      <ol>
+        <li><b>1</b><div><h3 data-i18n="s1_t">选目的地</h3><p data-i18n="s1_d">搜地点或收藏常用地址</p></div></li>
+        <li><b>2</b><div><h3 data-i18n="s2_t">一键发送</h3><p data-i18n="s2_d">自动推到老人手机</p></div></li>
+        <li><b>3</b><div><h3 data-i18n="s3_t">自动开导</h3><p data-i18n="s3_d">大字语音，老人几乎不用点</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="download wrap reveal" id="download">
+    <div class="dl-copy">
+      <img class="dl-logo" src="/assets/logo-180.png" width="72" height="72" alt="" />
+      <p class="eyebrow" data-i18n="dl_eyebrow">立即下载</p>
+      <h2 data-i18n="dl_h">一个 App，家人和爸妈都能用。</h2>
+      <p data-i18n="dl_d">在手机应用商店搜索「带路」，或点击下方入口。首次打开选择身份，扫码即可成为一家人。</p>
+    </div>
+    <div class="store-grid" data-stores></div>
+  </section>
+
+  <!-- OSS -->
+  <section class="oss wrap reveal">
+    <div class="oss-copy">
+      <p class="eyebrow" data-i18n="oss_eyebrow">开放 · 可自建</p>
+      <h2 data-i18n="oss_h">开源自建</h2>
+      <p data-i18n="oss_1">配对、同步、路线代理、推送与通话信令开源。欢迎自建。</p>
+      <div class="tags"><span>Go API</span><span>WebSocket</span><span>LiveKit</span><span>Amap / Google</span><span>APNs · PushKit</span></div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/foqerhk/waymate-server" data-i18n="cta_github">GitHub 自建</a>
+        <a class="btn btn-ghost" href="/status" data-i18n="cta_status">查看运行状态</a>
+      </div>
+    </div>
+    <pre class="term" aria-hidden="true"><span class="t-dim">$</span> git clone github.com/foqerhk/waymate-server
+<span class="t-dim">$</span> cp .env.example .env
+<span class="t-dim">$</span> docker compose up -d
+<span class="t-ok">✔</span> api      <span class="t-dim">listening :18080</span>
+<span class="t-ok">✔</span> livekit  <span class="t-dim">rtc ready</span>
+<span class="t-ok">✔</span> postgres <span class="t-dim">healthy</span></pre>
+  </section>
+
+  <footer class="foot wrap">
+    <div class="foot-brand">
+      <img src="/assets/logo-64.png" width="32" height="32" alt="" />
+      <span class="wordmark" role="img" aria-label="带路 Way Mate"></span>
+      <span class="foot-org">Intent Computing</span>
+    </div>
+    <div class="foot-links">
+      <a href="/status" data-i18n="nav_status">运行状态</a>
+      <a href="https://github.com/foqerhk/waymate-server" data-i18n="nav_github">开源</a>
+      <a href="https://github.com/foqerhk/waymate-server/blob/main/docs/CAPACITY.md">CAPACITY</a>
+    </div>
+  </footer>
+
+  <dialog class="film" id="film">
+    <button type="button" class="film-close" id="filmClose" aria-label="close">×</button>
+    <video controls playsinline preload="none" poster="/assets/video/film-zh.jpg"></video>
+  </dialog>
+
+  <script src="/assets/i18n.js?v=20261006d"></script>
+  <script src="/assets/nav.js?v=20261006d"></script>
+  <script src="/assets/home.js?v=20261006d"></script>
+</body>
+</html>

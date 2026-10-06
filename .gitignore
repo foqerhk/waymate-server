@@ -13,3 +13,5 @@ waymate_pg/
 bin/
 dist/
 *.log
+
+livekit.yaml.intl

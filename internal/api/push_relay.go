@@ -13,10 +13,11 @@ import (
 // App Store team's .p8 never leaves the central deployment.
 
 type pushRelayRouteReq struct {
-	DeviceToken string `json:"deviceToken"`
-	Sandbox     bool   `json:"sandbox"`
-	Title       string `json:"title"`
-	Body        string `json:"body"`
+	DeviceToken string         `json:"deviceToken"`
+	Sandbox     bool           `json:"sandbox"`
+	Title       string         `json:"title"`
+	Body        string         `json:"body"`
+	Custom      map[string]any `json:"custom,omitempty"`
 }
 
 type pushRelayVoIPReq struct {
@@ -45,13 +46,10 @@ func (s *Server) handlePushRelayRoute(w http.ResponseWriter, r *http.Request) {
 	}
 	title := strings.TrimSpace(req.Title)
 	body := strings.TrimSpace(req.Body)
-	if title == "" {
-		title = "WayMate"
-	}
 	if body == "" {
-		body = "New update"
+		body = "家人给你发送了新的路线。"
 	}
-	if err := s.push.NotifyRoute(r.Context(), req.DeviceToken, req.Sandbox, title, body); err != nil {
+	if err := s.push.NotifyRoute(r.Context(), req.DeviceToken, req.Sandbox, title, body, req.Custom); err != nil {
 		log.Printf("push-relay route failed: %v", err)
 		writeErr(w, http.StatusBadGateway, "apns_failed")
 		return

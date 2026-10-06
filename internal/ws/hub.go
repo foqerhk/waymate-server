@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/foqerhk/waymate-server/internal/models"
+	"github.com/waymate/backend/internal/models"
 )
 
 type Client struct {
@@ -94,4 +94,10 @@ func (h *Hub) IsOnline(deviceID uuid.UUID) bool {
 	defer h.mu.RUnlock()
 	_, ok := h.clients[deviceID]
 	return ok
+}
+
+func (h *Hub) OnlineCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients)
 }

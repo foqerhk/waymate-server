@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/foqerhk/waymate-server/internal/api"
-	"github.com/foqerhk/waymate-server/internal/config"
-	"github.com/foqerhk/waymate-server/internal/db"
-	"github.com/foqerhk/waymate-server/internal/push"
-	"github.com/foqerhk/waymate-server/internal/ws"
+	"github.com/waymate/backend/internal/api"
+	"github.com/waymate/backend/internal/config"
+	"github.com/waymate/backend/internal/db"
+	"github.com/waymate/backend/internal/push"
+	"github.com/waymate/backend/internal/ws"
 )
 
 func main() {
@@ -33,7 +33,13 @@ func main() {
 	if migrationDir == "" {
 		migrationDir = "migrations"
 	}
-	for _, name := range []string{"001_init.sql", "002_permanent_invite.sql", "003_calls.sql"} {
+	for _, name := range []string{
+		"001_init.sql",
+		"002_permanent_invite.sql",
+		"003_calls.sql",
+		"004_usage_stats.sql",
+		"005_maps_kinds_split.sql",
+	} {
 		path := filepath.Join(migrationDir, name)
 		if err := db.Migrate(ctx, pool, path); err != nil {
 			log.Fatalf("migrate %s: %v", name, err)

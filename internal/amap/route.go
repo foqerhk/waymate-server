@@ -12,55 +12,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/waymate/backend/internal/maps"
 )
 
-// Coordinate matches the iOS Coordinate JSON shape.
-type Coordinate struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-type TransitLeg struct {
-	Vehicle                string   `json:"vehicle"`
-	LineName               *string  `json:"lineName"`
-	DepartureStop          *string  `json:"departureStop"`
-	ArrivalStop            *string  `json:"arrivalStop"`
-	PlannedDurationSeconds *float64 `json:"plannedDurationSeconds"`
-	RealtimeArrivalText    *string  `json:"realtimeArrivalText"`
-	ViaStopsCount          *int     `json:"viaStopsCount"`
-}
-
-type RouteStep struct {
-	ID             string       `json:"id"`
-	Instruction    string       `json:"instruction"`
-	Maneuver       string       `json:"maneuver"`
-	DistanceMeters float64      `json:"distanceMeters"`
-	Polyline       []Coordinate `json:"polyline"`
-	Transit        *TransitLeg  `json:"transit"`
-}
-
-// RoutePlan matches the iOS RoutePlan JSON shape so the app can decode it directly.
-type RoutePlan struct {
-	ID                         string       `json:"id"`
-	Mode                       string       `json:"mode"`
-	Origin                     Coordinate   `json:"origin"`
-	Destination                Coordinate   `json:"destination"`
-	DestinationName            string       `json:"destinationName"`
-	DistanceMeters             float64      `json:"distanceMeters"`
-	ExpectedTravelTime         float64      `json:"expectedTravelTime"`
-	CostYuan                   *float64     `json:"costYuan"`
-	Summary                    string       `json:"summary"`
-	Polyline                   []Coordinate `json:"polyline"`
-	Steps                      []RouteStep  `json:"steps"`
-	CreatedAt                  time.Time    `json:"createdAt"`
-	CreatedByName              string       `json:"createdByName"`
-	RideHailStatus             *string      `json:"rideHailStatus"`
-	RealtimeTransitUnavailable bool         `json:"realtimeTransitUnavailable"`
-}
-
-func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat, destLng float64, destinationName, createdByName string) (*RoutePlan, error) {
+func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat, destLng float64, destinationName, createdByName string) (*maps.RoutePlan, error) {
 	if !c.Enabled() {
-		return nil, fmt.Errorf("amap key not configured")
+		return nil, maps.ErrNotConfigured
 	}
 	oLat, oLng := wgs84ToGcj02(originLat, originLng)
 	dLat, dLng := wgs84ToGcj02(destLat, destLng)
@@ -87,12 +44,12 @@ func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat,
 	}
 	path := decoded.Route.Paths[0]
 
-	var steps []RouteStep
-	var poly []Coordinate
+	var steps []maps.RouteStep
+	var poly []maps.Coordinate
 	for i, s := range path.Steps {
 		coords := parsePolylineWGS(stringifyFlex(s.Polyline))
 		poly = append(poly, coords...)
-		steps = append(steps, RouteStep{
+		steps = append(steps, maps.RouteStep{
 			ID:             fmt.Sprintf("walk-%d-%s", i, uuid.NewString()[:8]),
 			Instruction:    firstNonEmpty(stringifyFlex(s.Instruction), stringifyFlex(s.Road), "继续前进"),
 			Maneuver:       "continueStraight",
@@ -101,16 +58,16 @@ func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat,
 			Transit:        nil,
 		})
 	}
-	steps = append(steps, RouteStep{
+	steps = append(steps, maps.RouteStep{
 		ID:             uuid.NewString(),
 		Instruction:    "已到达目的地",
 		Maneuver:       "arrive",
 		DistanceMeters: 0,
-		Polyline:       []Coordinate{{Latitude: destLat, Longitude: destLng}},
+		Polyline:       []maps.Coordinate{{Latitude: destLat, Longitude: destLng}},
 		Transit:        nil,
 	})
 	if len(poly) == 0 {
-		poly = []Coordinate{
+		poly = []maps.Coordinate{
 			{Latitude: originLat, Longitude: originLng},
 			{Latitude: destLat, Longitude: destLng},
 		}
@@ -120,11 +77,11 @@ func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat,
 	if dur == 0 && dist > 0 {
 		dur = dist / 1.2
 	}
-	return &RoutePlan{
+	return &maps.RoutePlan{
 		ID:                         uuid.NewString(),
 		Mode:                       "walking",
-		Origin:                     Coordinate{Latitude: originLat, Longitude: originLng},
-		Destination:                Coordinate{Latitude: destLat, Longitude: destLng},
+		Origin:                     maps.Coordinate{Latitude: originLat, Longitude: originLng},
+		Destination:                maps.Coordinate{Latitude: destLat, Longitude: destLng},
 		DestinationName:            destinationName,
 		DistanceMeters:             dist,
 		ExpectedTravelTime:         dur,
@@ -137,9 +94,9 @@ func (c *Client) PlanWalking(ctx context.Context, originLat, originLng, destLat,
 	}, nil
 }
 
-func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat, destLng float64, destinationName, createdByName, city string) (*RoutePlan, error) {
+func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat, destLng float64, destinationName, createdByName, city string) (*maps.RoutePlan, error) {
 	if !c.Enabled() {
-		return nil, fmt.Errorf("amap key not configured")
+		return nil, maps.ErrNotConfigured
 	}
 	city = strings.TrimSpace(city)
 	if city == "" {
@@ -174,8 +131,8 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 	}
 	transit := decoded.Route.Transits[0]
 
-	var steps []RouteStep
-	var poly []Coordinate
+	var steps []maps.RouteStep
+	var poly []maps.Coordinate
 	var summaryParts []string
 
 	for i, seg := range transit.Segments {
@@ -187,11 +144,11 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 				if dur == 0 {
 					dur = parseFloatFlex(seg.Walking.Duration)
 				}
-				leg := &TransitLeg{Vehicle: "walk"}
+				leg := &maps.TransitLeg{Vehicle: "walk"}
 				if dur > 0 {
 					leg.PlannedDurationSeconds = &dur
 				}
-				steps = append(steps, RouteStep{
+				steps = append(steps, maps.RouteStep{
 					ID:             fmt.Sprintf("transit-walk-%d-%d", i, wIndex),
 					Instruction:    firstNonEmpty(stringifyFlex(walk.Instruction), "步行前往车站"),
 					Maneuver:       "continueStraight",
@@ -214,7 +171,7 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 				instruction = fmt.Sprintf("请乘坐%s，从%s上车，到%s下车", lineName, dep, arr)
 			}
 			vehicle := vehicleKind(stringifyFlex(line.Type))
-			leg := &TransitLeg{Vehicle: vehicle, LineName: strPtr(lineName)}
+			leg := &maps.TransitLeg{Vehicle: vehicle, LineName: strPtr(lineName)}
 			if dep != "" {
 				leg.DepartureStop = &dep
 			}
@@ -227,7 +184,7 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 			if n, err := strconv.Atoi(stringifyFlex(line.ViaNum)); err == nil {
 				leg.ViaStopsCount = &n
 			}
-			steps = append(steps, RouteStep{
+			steps = append(steps, maps.RouteStep{
 				ID:             fmt.Sprintf("transit-bus-%d", i),
 				Instruction:    instruction,
 				Maneuver:       "continueStraight",
@@ -237,16 +194,16 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 			})
 		}
 	}
-	steps = append(steps, RouteStep{
+	steps = append(steps, maps.RouteStep{
 		ID:             uuid.NewString(),
 		Instruction:    "已到达目的地",
 		Maneuver:       "arrive",
 		DistanceMeters: 0,
-		Polyline:       []Coordinate{{Latitude: destLat, Longitude: destLng}},
+		Polyline:       []maps.Coordinate{{Latitude: destLat, Longitude: destLng}},
 		Transit:        nil,
 	})
 	if len(poly) == 0 {
-		poly = []Coordinate{
+		poly = []maps.Coordinate{
 			{Latitude: originLat, Longitude: originLng},
 			{Latitude: destLat, Longitude: destLng},
 		}
@@ -264,11 +221,11 @@ func (c *Client) PlanTransit(ctx context.Context, originLat, originLng, destLat,
 	if c := parseFloatFlex(transit.Cost); c > 0 {
 		cost = &c
 	}
-	return &RoutePlan{
+	return &maps.RoutePlan{
 		ID:                         uuid.NewString(),
 		Mode:                       "transit",
-		Origin:                     Coordinate{Latitude: originLat, Longitude: originLng},
-		Destination:                Coordinate{Latitude: destLat, Longitude: destLng},
+		Origin:                     maps.Coordinate{Latitude: originLat, Longitude: originLng},
+		Destination:                maps.Coordinate{Latitude: destLat, Longitude: destLng},
 		DestinationName:            destinationName,
 		DistanceMeters:             dist,
 		ExpectedTravelTime:         dur,
@@ -296,9 +253,9 @@ func (c *Client) get(ctx context.Context, path string, q url.Values) ([]byte, er
 	return io.ReadAll(io.LimitReader(res.Body, 2<<20))
 }
 
-func parsePolylineWGS(s string) []Coordinate {
+func parsePolylineWGS(s string) []maps.Coordinate {
 	parts := strings.Split(strings.TrimSpace(s), ";")
-	out := make([]Coordinate, 0, len(parts))
+	out := make([]maps.Coordinate, 0, len(parts))
 	for _, pair := range parts {
 		pair = strings.TrimSpace(pair)
 		if pair == "" {
@@ -314,7 +271,7 @@ func parsePolylineWGS(s string) []Coordinate {
 			continue
 		}
 		wgsLat, wgsLng := gcj02ToWgs84(lat, lng)
-		out = append(out, Coordinate{Latitude: wgsLat, Longitude: wgsLng})
+		out = append(out, maps.Coordinate{Latitude: wgsLat, Longitude: wgsLng})
 	}
 	return out
 }

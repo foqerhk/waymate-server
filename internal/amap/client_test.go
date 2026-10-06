@@ -3,7 +3,11 @@ package amap
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/waymate/backend/internal/maps"
 )
+
+var _ maps.Provider = (*Client)(nil)
 
 func TestPlacePOIDistanceFlexible(t *testing.T) {
 	cases := []struct {

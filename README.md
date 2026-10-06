@@ -9,7 +9,7 @@ Open-source backend for [WayMate](https://github.com/foqerhk/waymate-server) (�
 - Device registration with JWT (no usernames / passwords)
 - Family invite QR + join flow
 - REST + WebSocket realtime (location, routes, call signaling)
-- Place search and walking / transit routing proxied through [Amap Web Service](https://lbs.amap.com/)
+- Place search and walking / transit routing via **Amap** (China) or **Google Maps** (intl), selected by `MAPS_PROVIDER`
 - Self-hosted [LiveKit](https://livekit.io/) for voice / video (elder rear camera)
 - Optional Apple Push via **official push relay** (recommended) or your own APNs key (custom-signed apps only)
 
@@ -59,7 +59,9 @@ If you fork and ship **your own** iOS binary (your Bundle ID + Team), you may se
 | `JWT_SECRET` | **Yes** | Generate yourself (`openssl rand -hex 32`) | Signs device session tokens |
 | `INVITE_HMAC_SECRET` | **Yes** | Generate yourself | Signs family invite QR payloads |
 | `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | **Yes** (for calls) | Choose any pair; must match `livekit.yaml` → `keys` | Used to mint LiveKit room JWTs |
-| `AMAP_WEB_KEY` | **Yes** (for maps / routes) | [Amap console](https://console.amap.com/) → Web service key | Keep **server-side only**. Enable place search + walking + transit. Whitelist your server egress IP if the console requires it |
+| `MAPS_PROVIDER` | **Yes** (maps) | `amap` (CN) or `google` (intl) | Deploy-time switch; same binary |
+| `AMAP_WEB_KEY` | When `amap` | [Amap console](https://console.amap.com/) → Web service key | Keep **server-side only**. Enable place search + walking + transit. Whitelist your server egress IP if required |
+| `GOOGLE_MAPS_API_KEY` | When `google` | [Google Cloud](https://console.cloud.google.com/) → Places API + Directions API | Keep **server-side only**. Restrict key to those APIs + server IP |
 | `PUBLIC_BASE_URL` | **Yes** | Your public HTTPS origin | Embedded in invite QR links |
 | `PUSH_RELAY_URL` / `PUSH_RELAY_TOKEN` | **Recommended** (App Store app) | Official WayMate relay | See **Push model** above — no Apple cert needed |
 | Apple Developer Team ID + APNs `.p8` | Only for a **custom-signed** iOS fork | [Apple Developer](https://developer.apple.com/) | Not usable with the App Store WayMate binary |
@@ -73,7 +75,7 @@ See [`.env.example`](.env.example) for every variable.
 You can run pairing, location sync, and Amap routing with only:
 
 1. Strong `JWT_SECRET` + `INVITE_HMAC_SECRET`
-2. `AMAP_WEB_KEY`
+2. `MAPS_PROVIDER=amap` + `AMAP_WEB_KEY` (CN) **or** `MAPS_PROVIDER=google` + `GOOGLE_MAPS_API_KEY` (intl)
 3. Matching LiveKit key/secret if you test calls
 4. `PUSH_RELAY_*` if you need background CallKit / route alerts on the App Store app
 
@@ -94,7 +96,7 @@ You can run pairing, location sync, and Amap routing with only:
 | `GET` | `/v1/session` | Family snapshot |
 | `POST` | `/v1/families` | Family creates invite |
 | `POST` | `/v1/families/join` | Elder joins via QR / code |
-| `POST` | `/v1/places/search` | Amap place search proxy |
+| `GET` | `/v1/places/search` | Place search proxy (Amap or Google) |
 | `POST` | `/v1/routes/plan` | Walking / transit plan proxy |
 | `GET` | `/v1/ws` | Realtime WebSocket |
 | `POST` | `/v1/calls/...` | Start / answer / end + LiveKit tokens |
@@ -103,7 +105,7 @@ You can run pairing, location sync, and Amap routing with only:
 
 ```text
 cmd/server/          HTTP entrypoint
-internal/            API, DB, Amap, LiveKit tokens, APNs, WebSocket hub
+internal/            API, DB, maps (Amap/Google), LiveKit tokens, APNs, WebSocket hub
 migrations/          Postgres SQL
 deploy/              Reverse-proxy examples
 livekit.yaml.example LiveKit SFU sample config
@@ -113,7 +115,7 @@ docker-compose.yml   Postgres + API + LiveKit
 ## Security notes
 
 - Never commit `.env`, `secrets/`, or `livekit.yaml`.
-- Never embed Amap or Apple keys in the iOS client.
+- Never embed Amap / Google Maps or Apple keys in the iOS client.
 - Rotate JWT / invite / LiveKit secrets if they ever leak.
 - Report vulnerabilities privately (see [SECURITY.md](SECURITY.md)).
 

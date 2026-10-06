@@ -10,12 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/waymate/backend/internal/maps"
 )
 
 type Client struct {
-	key    string
-	http   *http.Client
-	base   string
+	key  string
+	http *http.Client
+	base string
 }
 
 func New(key string) *Client {
@@ -27,23 +29,13 @@ func New(key string) *Client {
 }
 
 func (c *Client) Enabled() bool { return c != nil && c.key != "" }
-
-type Place struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	Address         string  `json:"address"`
-	District        string  `json:"district,omitempty"`
-	Type            string  `json:"type,omitempty"`
-	Latitude        float64 `json:"latitude"`  // WGS-84 for the app
-	Longitude       float64 `json:"longitude"` // WGS-84 for the app
-	DistanceMeters  *int    `json:"distanceMeters,omitempty"`
-}
+func (c *Client) Name() string  { return "amap" }
 
 // SearchPlaces looks up POIs near (lat,lng). Coordinates from the client are treated as
 // WGS-84 (CoreLocation) and converted to GCJ-02 for Amap; results are converted back.
-func (c *Client) SearchPlaces(ctx context.Context, keywords string, lat, lng float64) ([]Place, error) {
+func (c *Client) SearchPlaces(ctx context.Context, keywords string, lat, lng float64) ([]maps.Place, error) {
 	if !c.Enabled() {
-		return nil, fmt.Errorf("amap key not configured")
+		return nil, maps.ErrNotConfigured
 	}
 	keywords = strings.TrimSpace(keywords)
 	if keywords == "" {
@@ -83,14 +75,14 @@ func (c *Client) SearchPlaces(ctx context.Context, keywords string, lat, lng flo
 		return nil, fmt.Errorf("amap place search: %s (%s)", decoded.Info, decoded.Infocode)
 	}
 
-	out := make([]Place, 0, len(decoded.Pois))
+	out := make([]maps.Place, 0, len(decoded.Pois))
 	for _, p := range decoded.Pois {
 		plat, plng, ok := parseLocation(p.Location)
 		if !ok {
 			continue
 		}
 		wgsLat, wgsLng := gcj02ToWgs84(plat, plng)
-		place := Place{
+		place := maps.Place{
 			ID:        firstNonEmpty(p.ID, fmt.Sprintf("%.5f,%.5f", plat, plng)),
 			Name:      p.Name,
 			Address:   stringifyFlex(p.Address),

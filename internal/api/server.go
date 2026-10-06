@@ -13,46 +13,86 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/foqerhk/waymate-server/internal/amap"
-	"github.com/foqerhk/waymate-server/internal/auth"
-	"github.com/foqerhk/waymate-server/internal/config"
-	"github.com/foqerhk/waymate-server/internal/db"
-	lk "github.com/foqerhk/waymate-server/internal/livekit"
-	"github.com/foqerhk/waymate-server/internal/models"
-	"github.com/foqerhk/waymate-server/internal/pair"
-	"github.com/foqerhk/waymate-server/internal/push"
-	"github.com/foqerhk/waymate-server/internal/ws"
+	"github.com/waymate/backend/internal/amap"
+	"github.com/waymate/backend/internal/auth"
+	"github.com/waymate/backend/internal/config"
+	"github.com/waymate/backend/internal/db"
+	"github.com/waymate/backend/internal/gmaps"
+	lk "github.com/waymate/backend/internal/livekit"
+	"github.com/waymate/backend/internal/maps"
+	"github.com/waymate/backend/internal/models"
+	"github.com/waymate/backend/internal/pair"
+	"github.com/waymate/backend/internal/push"
+	"github.com/waymate/backend/internal/ws"
 )
 
 type Server struct {
-	cfg     config.Config
-	store   *db.Store
-	tokens  *auth.TokenService
-	invites *pair.Signer
-	hub     *ws.Hub
-	push    push.Pusher
-	amap    *amap.Client
-	upgrader websocket.Upgrader
+	cfg         config.Config
+	store       *db.Store
+	tokens      *auth.TokenService
+	invites     *pair.Signer
+	hub         *ws.Hub
+	push        push.Pusher
+	maps        maps.Provider
+	upgrader    websocket.Upgrader
+	statusCache statusCache
 }
 
 func New(cfg config.Config, store *db.Store, hub *ws.Hub, pusher push.Pusher) *Server {
-	return &Server{
+	s := &Server{
 		cfg:     cfg,
 		store:   store,
 		tokens:  auth.NewTokenService(cfg.JWTSecret),
 		invites: pair.NewSigner(cfg.InviteHMACSecret, cfg.PublicBaseURL, cfg.InviteTTL),
 		hub:     hub,
 		push:    pusher,
-		amap:    amap.New(cfg.AmapWebKey),
+		maps:    newMapsProvider(cfg, store),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool { return true },
 		},
+	}
+	s.startCapacitySampler()
+	return s
+}
+
+func newMapsProvider(cfg config.Config, store *db.Store) maps.Provider {
+	switch maps.NormalizeProvider(cfg.MapsProvider) {
+	case "google":
+		keys := maps.ParseKeys(cfg.GoogleMapsAPIKeys, cfg.GoogleMapsAPIKey)
+		searchQ := cfg.GoogleSearchMonthlyQuota
+		lbsQ := cfg.GoogleLBSMonthlyQuota
+		if searchQ <= 0 {
+			searchQ = 100000
+		}
+		if lbsQ <= 0 {
+			lbsQ = 100000
+		}
+		return &maps.Metered{
+			ProviderName:    "google",
+			Keys:              keys,
+			SearchQuotaPerKey: searchQ,
+			LBSQuotaPerKey:    lbsQ,
+			Store:             store,
+			NewClient:         func(key string) maps.Provider { return gmaps.New(key) },
+		}
+	default:
+		keys := maps.ParseKeys(cfg.AmapWebKeys, cfg.AmapWebKey)
+		return &maps.Metered{
+			ProviderName:    "amap",
+			Keys:              keys,
+			SearchQuotaPerKey: cfg.AmapSearchMonthlyQuota,
+			LBSQuotaPerKey:    cfg.AmapLBSMonthlyQuota,
+			Store:             store,
+			NewClient:         func(key string) maps.Provider { return amap.New(key) },
+		}
 	}
 }
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealth)
+	mux.HandleFunc("GET /v1/public/status", s.handlePublicStatus)
+	mux.HandleFunc("GET /v1/public/download", s.handlePublicDownload)
 	mux.HandleFunc("POST /v1/devices/register", s.handleRegister)
 	mux.HandleFunc("GET /v1/session", s.auth(s.handleSession))
 	mux.HandleFunc("POST /v1/families", s.auth(s.handleCreateFamily))
@@ -95,8 +135,8 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePlaceSearch(w http.ResponseWriter, r *http.Request, _ uuid.UUID, _ models.Role) {
-	if s.amap == nil || !s.amap.Enabled() {
-		writeErr(w, http.StatusServiceUnavailable, "amap_not_configured")
+	if s.maps == nil || !s.maps.Enabled() {
+		writeErr(w, http.StatusServiceUnavailable, "maps_not_configured")
 		return
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -110,9 +150,9 @@ func (s *Server) handlePlaceSearch(w http.ResponseWriter, r *http.Request, _ uui
 		writeErr(w, http.StatusBadRequest, "latitude and longitude required")
 		return
 	}
-	places, err := s.amap.SearchPlaces(r.Context(), q, lat, lng)
+	places, err := s.maps.SearchPlaces(r.Context(), q, lat, lng)
 	if err != nil {
-		log.Printf("amap place search: %v", err)
+		log.Printf("maps(%s) place search: %v", s.maps.Name(), err)
 		writeErr(w, http.StatusBadGateway, "place_search_failed")
 		return
 	}
@@ -131,8 +171,8 @@ type planRouteReq struct {
 }
 
 func (s *Server) handlePlanRoute(w http.ResponseWriter, r *http.Request, _ uuid.UUID, _ models.Role) {
-	if s.amap == nil || !s.amap.Enabled() {
-		writeErr(w, http.StatusServiceUnavailable, "amap_not_configured")
+	if s.maps == nil || !s.maps.Enabled() {
+		writeErr(w, http.StatusServiceUnavailable, "maps_not_configured")
 		return
 	}
 	var req planRouteReq
@@ -150,19 +190,19 @@ func (s *Server) handlePlanRoute(w http.ResponseWriter, r *http.Request, _ uuid.
 		by = "Family"
 	}
 	var (
-		plan *amap.RoutePlan
+		plan *maps.RoutePlan
 		err  error
 	)
 	switch mode {
 	case "walking":
-		plan, err = s.amap.PlanWalking(
+		plan, err = s.maps.PlanWalking(
 			r.Context(),
 			req.OriginLatitude, req.OriginLongitude,
 			req.DestinationLatitude, req.DestinationLongitude,
 			name, by,
 		)
 	case "transit":
-		plan, err = s.amap.PlanTransit(
+		plan, err = s.maps.PlanTransit(
 			r.Context(),
 			req.OriginLatitude, req.OriginLongitude,
 			req.DestinationLatitude, req.DestinationLongitude,
@@ -173,7 +213,7 @@ func (s *Server) handlePlanRoute(w http.ResponseWriter, r *http.Request, _ uuid.
 		return
 	}
 	if err != nil {
-		log.Printf("amap route plan (%s): %v", mode, err)
+		log.Printf("maps(%s) route plan (%s): %v", s.maps.Name(), mode, err)
 		writeErr(w, http.StatusBadGateway, "route_plan_failed")
 		return
 	}
@@ -525,16 +565,38 @@ func (s *Server) handleSendRoute(w http.ResponseWriter, r *http.Request, deviceI
 	// trip from DB (+ APNs wake) the next time they open the app.
 	online := s.hub.IsOnline(elderID)
 	if familyID != uuid.Nil {
+		// BroadcastFamily already delivers to every online family member (including elder).
+		// Do not SendTo(elder) again — that caused a duplicate WS "route" and double local banners.
 		s.hub.BroadcastFamily(familyID, models.WSEnvelope{Type: "route", Data: raw}, uuid.Nil)
-	}
-	if online {
+	} else if online {
 		s.hub.SendTo(elderID, models.WSEnvelope{Type: "route", Data: raw})
 	}
 
 	pushSent := false
+	// Always wake via APNs when a token exists. Force-quit / suspended elders can keep a
+	// zombie WebSocket for tens of seconds (IsOnline still true) — skipping push then
+	// drops the only reliable system banner. Client avoids a second *local* banner.
 	token, sandbox, _ := s.store.ElderAPNsTokens(r.Context(), elderID)
 	if strings.TrimSpace(token) != "" {
-		if err := s.push.NotifyRoute(r.Context(), token, sandbox, "WayMate", "家人给你安排了一条新路线"); err != nil {
+		speakerName := "家人"
+		if memberName, err := s.store.MemberDisplayName(r.Context(), deviceID); err == nil && strings.TrimSpace(memberName) != "" {
+			speakerName = strings.TrimSpace(memberName)
+		} else if caller, err := s.store.GetDevice(r.Context(), deviceID); err == nil && caller != nil && strings.TrimSpace(caller.DisplayName) != "" {
+			speakerName = strings.TrimSpace(caller.DisplayName)
+		}
+		destination := routeDestinationName(body)
+		alertBody := speakerName + "给你发送了新的路线。"
+		if destination != "" {
+			alertBody += destination
+		}
+		custom := map[string]any{
+			"type":        "route",
+			"speakerName": speakerName,
+			"destination": destination,
+			"speakText":   alertBody,
+		}
+		// Empty title → iOS shows localized app display name (带路), not hardcoded English.
+		if err := s.push.NotifyRoute(r.Context(), token, sandbox, "", alertBody, custom); err != nil {
 			log.Printf("route push failed elder=%s: %v", elderID, err)
 		} else {
 			pushSent = true
@@ -754,6 +816,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) writePump(c *ws.Client) {
 	defer func() {
+		s.hub.Unregister(c.DeviceID)
 		_ = c.Conn.Close()
 	}()
 	for msg := range c.Send {
@@ -770,9 +833,12 @@ func (s *Server) readPump(c *ws.Client) {
 		_ = c.Conn.Close()
 	}()
 	c.Conn.SetReadLimit(1 << 20)
-	_ = c.Conn.SetReadDeadline(time.Now().Add(90 * time.Second))
+	// Keep this short: force-quit often leaves a half-open TCP socket, and IsOnline
+	// would otherwise stay true for a long time without a clean close frame.
+	const idle = 45 * time.Second
+	_ = c.Conn.SetReadDeadline(time.Now().Add(idle))
 	c.Conn.SetPongHandler(func(string) error {
-		_ = c.Conn.SetReadDeadline(time.Now().Add(90 * time.Second))
+		_ = c.Conn.SetReadDeadline(time.Now().Add(idle))
 		_ = s.store.TouchDevice(context.Background(), c.DeviceID)
 		return nil
 	})
@@ -781,6 +847,9 @@ func (s *Server) readPump(c *ws.Client) {
 		if err != nil {
 			return
 		}
+		// App-level JSON ping also proves liveness (we don't rely only on WS pong frames).
+		_ = c.Conn.SetReadDeadline(time.Now().Add(idle))
+		_ = s.store.TouchDevice(context.Background(), c.DeviceID)
 		var env models.WSEnvelope
 		if json.Unmarshal(message, &env) != nil {
 			continue
@@ -893,6 +962,19 @@ func (s *Server) handleStartCall(w http.ResponseWriter, r *http.Request, deviceI
 		"channelName":    call.ChannelName,
 		"callerDeviceId": call.CallerDeviceID.String(),
 		"calleeDeviceId": call.CalleeDeviceID.String(),
+		"autoAnswer":     true,
+		"callerName":     callerName,
+		// Intentionally omit livekitUrl/Token from VoIP — JWT often blows the ~5KB
+		// APNs limit (truncated payload → client skips auto-answer). Elder fetches
+		// credentials via GET /v1/calls/{id} after auto-answer.
+	}
+	// Full media credentials for realtime WS (no size limit).
+	elderWSPayload := map[string]any{
+		"callId":         call.ID.String(),
+		"mediaType":      call.MediaType,
+		"channelName":    call.ChannelName,
+		"callerDeviceId": call.CallerDeviceID.String(),
+		"calleeDeviceId": call.CalleeDeviceID.String(),
 		"livekitUrl":     lkCfg.URL,
 		"livekitToken":   elderToken,
 		"autoAnswer":     true,
@@ -908,7 +990,7 @@ func (s *Server) handleStartCall(w http.ResponseWriter, r *http.Request, deviceI
 		"livekitToken":   callerToken,
 		"autoAnswer":     false,
 	}
-	elderRaw, _ := json.Marshal(elderPayload)
+	elderRaw, _ := json.Marshal(elderWSPayload)
 	callerRaw, _ := json.Marshal(callerPayload)
 	if online {
 		s.hub.SendTo(elderID, models.WSEnvelope{Type: "incoming_call", Data: elderRaw})
@@ -1196,6 +1278,23 @@ func decode(r *http.Request, dst any) error {
 	dec := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
 	dec.DisallowUnknownFields()
 	return dec.Decode(dst)
+}
+
+func routeDestinationName(routeJSON []byte) string {
+	var meta struct {
+		DestinationName string `json:"destinationName"`
+		Destination     struct {
+			Name string `json:"name"`
+		} `json:"destination"`
+	}
+	if err := json.Unmarshal(routeJSON, &meta); err != nil {
+		return ""
+	}
+	name := strings.TrimSpace(meta.DestinationName)
+	if name == "" {
+		name = strings.TrimSpace(meta.Destination.Name)
+	}
+	return name
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
