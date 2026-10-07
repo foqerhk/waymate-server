@@ -4,6 +4,9 @@ Open-source backend for [WayMate](https://github.com/foqerhk/waymate-server) (�
 
 **English** · [中文说明](README.zh-CN.md)
 
+Operator / AI notes: [`AGENTS.md`](AGENTS.md) · CN vs INTL deploy: [`docs/DEPLOY-REGIONS.md`](docs/DEPLOY-REGIONS.md)  
+Official iOS / Android clients: https://github.com/foqerhk/WayMate
+
 ## Features
 
 - Device registration with JWT (no usernames / passwords)
@@ -81,12 +84,13 @@ You can run pairing, location sync, and Amap routing with only:
 
 ## Production checklist
 
-1. Put the API behind HTTPS and LiveKit signaling behind WSS (sample nginx: [`deploy/nginx.example.conf`](deploy/nginx.example.conf)).
-2. Set `PUBLIC_BASE_URL` and `LIVEKIT_PUBLIC_URL` to that public host.
+1. Put the API behind HTTPS and LiveKit signaling behind WSS (sample nginx: [`deploy/nginx.example.conf`](deploy/nginx.example.conf)). Official dual-region hosts: see [`docs/DEPLOY-REGIONS.md`](docs/DEPLOY-REGIONS.md) (`nginx-waymate.conf` / `nginx-waymate-net.conf`).
+2. Set `PUBLIC_BASE_URL` and `LIVEKIT_PUBLIC_URL` to that public host. **CN** uses Amap; **INTL** uses Google (`MAPS_PROVIDER`).
 3. Open UDP `50000–50100` (and TCP `7881`) toward the LiveKit container / host.
 4. If LiveKit cannot detect your public IP, set `rtc.node_ip` in `livekit.yaml`.
-5. Keep `APNS_ENABLED=false` and configure `PUSH_RELAY_*` for the App Store app (or enable local APNs only for your own binary).
-6. Back up the Postgres volume (`waymate_pg`).
+5. Keep `APNS_ENABLED=false` and configure `PUSH_RELAY_*` for the App Store app (or enable local APNs only for your own binary). Official WayMate cloud hosts use their own APNs key on disk — not this relay path.
+6. Ship a **prebuilt** `linux/amd64` `waymate-api` and `docker compose build --no-cache api` (the Dockerfile does not compile Go on the server).
+7. Back up the Postgres volume (`waymate_pg`).
 
 ## API overview
 

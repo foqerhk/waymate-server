@@ -4,6 +4,9 @@ WayMate（带路）的开源服务端：无账号、扫码配对，同步位置 
 
 [English README](README.md) · **中文**
 
+运维 / AI：[`AGENTS.md`](AGENTS.md) · 国区与外区部署：[`docs/DEPLOY-REGIONS.md`](docs/DEPLOY-REGIONS.md)  
+官方客户端：https://github.com/foqerhk/WayMate
+
 ## 功能
 
 - 设备注册 + JWT（无用户名密码）
